@@ -1,2 +1,2 @@
-# Unity-WebGL-WebRTC-Video-Chat
+# UnityWebGLWebRTCVideoChatAndScreenShare
 UnityのWebGLビルドでWebRTCビデオチャットおよびスクリーンシェア
