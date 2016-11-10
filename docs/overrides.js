@@ -145,7 +145,7 @@ function override_enumerateMediaDevices() {
                     });
                 }
             });
-            chrome.runtime.sendMessage(screenShareExtensionId, 'getScreenStreamId', streamId => {
+            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
                 if(!streamId) return;
                 MediaDevices.push({
                     deviceName: 'screen',
