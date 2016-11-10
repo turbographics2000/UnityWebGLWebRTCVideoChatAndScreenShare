@@ -125,7 +125,7 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
     var video = document.createElement('video');
     var constraints = null;
     var p = null;
-    if(device.label === 'screen') {
+    if(device.deviceName === 'screen') {
         constraints = {
             video: {
                 mandatory: {
