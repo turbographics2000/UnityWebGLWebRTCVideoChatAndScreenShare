@@ -151,7 +151,7 @@ function override_enumerateMediaDevices() {
                     deviceName: 'screen',
                     refCount: 0,
                     deviceId: null,
-                    video: true
+                    video: null
                 });
             });
         })
