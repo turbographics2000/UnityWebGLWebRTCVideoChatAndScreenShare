@@ -232,7 +232,7 @@ function override_JS_WebCamVideo_Stop(deviceIndex) {
 function override_JS_WebCamVideo_Start(deviceIndex) {
     consoleLog && console.log('_JS_WebCamVideo_Start', deviceIndex);
     var device = MediaDevices[deviceIndex];
-    if(device.label === 'screen') {
+    if(device.deviceName === 'screen') {
         override_JS_WebCamVideo_Stop(deviceIndex);
     }
     if(device.video) {
