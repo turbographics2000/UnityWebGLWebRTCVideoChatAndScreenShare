@@ -126,17 +126,6 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
     var constraints = null;
     var p = null;
     if(device.deviceName === 'screen') {
-        constraints = {
-            video: {
-                mandatory: {
-                    chromeMediaSource: 'desktop',
-                    chromeMediaSourceId: device.deviceId,
-                    maxWidth: 1280,
-                    maxHeight: 1280
-                }
-            },
-            audio: false
-        };
         var getScreenStreamId = function() {
             return new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
@@ -153,17 +142,33 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
         }
         p = getScreenStreamId();
     } else {
-        constraints = {
-            video: {
-                deviceId: device.deviceId
-            }, 
-            audio: false
-        };
         p = Promise.resolve({ 
             type: 'webcam'
         });
     }
-    p.then(navigator.mediaDevices.getUserMedia(constraints))
+    p.then(captureType => {
+            if(captureType.type === 'screen') {
+                return {
+                    video: {
+                        mandatory: {
+                            chromeMediaSource: 'desktop',
+                            chromeMediaSourceId: captureType.streamId,
+                            maxWidth: 1280,
+                            maxHeight: 1280
+                        }
+                    },
+                    audio: false
+                };
+            } else {
+                return {
+                    video: {
+                        deviceId: device.deviceId
+                    }, 
+                    audio: false
+                };
+            }
+        })
+        .then(navigator.mediaDevices.getUserMedia)
         .then(stream => {
             video.srcObject = stream;
             webcam.canvas.appendChild(video);
