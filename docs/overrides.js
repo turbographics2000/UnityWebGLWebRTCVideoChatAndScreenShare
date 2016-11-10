@@ -168,7 +168,9 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
                 };
             }
         })
-        .then(navigator.mediaDevices.getUserMedia)
+        .then(constraints => {
+            return navigator.mediaDevices.getUserMedia(constraints);
+        })
         .then(stream => {
             video.srcObject = stream;
             webcam.canvas.appendChild(video);
