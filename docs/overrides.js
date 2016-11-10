@@ -145,12 +145,12 @@ function override_enumerateMediaDevices() {
                     });
                 }
             });
-            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
-                if(!streamId) return;
+            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'check', result => {
+                if(!result) return;
                 MediaDevices.push({
                     deviceName: 'screen',
                     refCount: 0,
-                    deviceId: streamId,
+                    deviceId: null,
                     video: null
                 });
             });
