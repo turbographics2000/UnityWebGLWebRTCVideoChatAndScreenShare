@@ -145,7 +145,7 @@ function override_enumerateMediaDevices() {
                     });
                 }
             });
-            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'check', result => {
+            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
                 if(!result) return;
                 MediaDevices.push({
                     deviceName: 'screen',
@@ -212,26 +212,31 @@ function override_JS_WebCam_IsSupported() {
 
 function override_JS_WebCamVideo_Stop(deviceIndex) {
     consoleLog && console.log('_JS_WebCamVideo_Stop', deviceIndex);
-    if(!MediaDevices[deviceIndex].video) {
+    var device = MediaDevices[deviceIndex];
+    if(!device.video) {
         console.error('WebCam not initialized.');
         return;
     }
-    if(--MediaDevices[deviceIndex].refCount === 0) {
-        var stream = MediaDevices[deviceIndex].video.srcObject;
+    if(--device.refCount === 0) {
+        var stream = device.video.srcObject;
         var streamTracks = stream.getTracks();
         for(var streamTrack of streamTracks) {
             streamTrack.stop();
         }
-        MediaDevices[deviceIndex].video.srcObject = null;
-        webcam.canvas.removeChild(MediaDevices[deviceIndex].video);
-        MediaDevices[deviceIndex].video = null;
+        device.video.srcObject = null;
+        webcam.canvas.removeChild(device.video);
+        device.video = null;
     }
 }
 
 function override_JS_WebCamVideo_Start(deviceIndex) {
     consoleLog && console.log('_JS_WebCamVideo_Start', deviceIndex);
-    if(MediaDevices[deviceIndex].video) {
-        MediaDevices[deviceIndex].refCount++;
+    var device = MediaDevices[deviceIndex];
+    if(device.label === 'screen') {
+        override_JS_WebCamVideo_Stop(deviceIndex);
+    }
+    if(device.video) {
+        device.refCount++;
         return;
     }
     if(!navigator.mediaDevices.getUserMedia) {
@@ -251,33 +256,52 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
     }
     var video = document.createElement('video');
     var constraints = null;
-    if(MediaDevices[deviceIndex].label === 'screen') {
+    var p = null;
+    if(device.label === 'screen') {
         constraints = {
             video: {
                 mandatory: {
                     chromeMediaSource: 'desktop',
-                    chromeMediaSourceId: MediaDevices[deviceIndex].deviceId,
+                    chromeMediaSourceId: device.deviceId,
                     maxWidth: 1280,
                     maxHeight: 1280
                 }
             },
             audio: false
         };
+        var getScreenStreamId = function() {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
+                    if(streamId){
+                        resolve({
+                            type: 'screen', 
+                            streamId: streamId
+                        });
+                    } else {
+                        reject('Get streamId error.');
+                    }
+                });
+            }); 
+        }
+        p = getScreenStreamId();
     } else {
         constraints = {
             video: {
-                deviceId: MediaDevices[deviceIndex].deviceId
+                deviceId: device.deviceId
             }, 
             audio: false
         };
+        p = Promise.resolve({ 
+            type: 'webcam'
+        });
     }
-    navigator.mediaDevices.getUserMedia(constraints)
+    p.then(navigator.mediaDevices.getUserMedia(constraints))
         .then(stream => {
             video.srcObject = stream;
             webcam.canvas.appendChild(video);
             video.play();
-            MediaDevices[deviceIndex].video = video;
-            MediaDevices[deviceIndex].refCount++;
+            device.video = video;
+            device.refCount++;
         })
         .catch(err => {
             console.log('An error occured! ' + err);
