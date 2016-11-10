@@ -152,9 +152,9 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
                     video: {
                         mandatory: {
                             chromeMediaSource: 'desktop',
-                            chromeMediaSourceId: captureType.streamId,
-                            maxWidth: 1280,
-                            maxHeight: 1280
+                            chromeMediaSourceId: captureType.streamId
+                            //maxWidth: 1920,
+                            //maxHeight: 1080
                         }
                     },
                     audio: false
