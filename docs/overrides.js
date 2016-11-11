@@ -1,30 +1,32 @@
 var consoleLog = false;
 // UnityLoader.jsでブラウザーの判定を行っているが、Edgeは'Chrome'と判定されてしまっている。
-var browserType = window.chrome ? 'chrome' :
-              window.StyleMedia ? 'edge' :
-              window.InstallTrigger ? 'firefox' :
-              window.safari ? 'safari' : 
-              'unsupport browser';     
+var browserType = window.chrome ? 'Chrome' :
+              window.StyleMedia ? 'Edge' :
+              window.InstallTrigger ? 'Firefox' :
+              window.safari ? 'Safari' : 
+              'Unsupported Browser';     
 function override_enumerateMediaDevices() {
     if(!navigator.mediaDevices) return;
     navigator.mediaDevices.getDisplayMedia = navigator.mediaDevices.getDisplayMedia || 
                                              navigator.mediaDevices.webkitGetDisplayMedia ||
                                              navigator.mediaDevices.mozGetDisplayMedia ||
                                              navigator.mediaDevices.msGetDisplayMedia;
+
     navigator.mediaDevices.enumerateDevices()
         .then(devices => {
             devices.forEach(device => {
                 if(device.kind === 'videoinput'){
                     MediaDevices.push({
-                        deviceName: device.label ? device.label : 'device #' + MediaDevices.length,
+                        deviceName: device.label || 'device #' + MediaDevices.length,
                         refCount: 0,
                         deviceId: device.deviceId,
                         video: null
                     });
                 }
             });
+
             if(navigator.mediaDevices.getDisplayMedia) {
-                // TODO Screen Capture API
+                // 策定中の仕様をとりあえず眺めて仮に実装したもの。まだどのブラウザーにおいてもScreen Capture APIは実装されていない。
                 ['Application', 'Browser', 'Monitor', 'Window'].forEach(deviceName => {
                     MediaDevices.push({
                         deviceName: deviceName,
@@ -34,18 +36,18 @@ function override_enumerateMediaDevices() {
                         video: false
                     });
                 });
-            } else if(browserType === 'chrome') {
+            } else if(browserType === 'Chrome') {
                 chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
                     if(!result) return;
                     MediaDevices.push({
-                        deviceName: 'Screen / Window / Chrome Tab',
+                        deviceName: 'Screen/Window/ChromeTab',
                         apiType: 'Chrome',
                         refCount: 0,
                         deviceId: null,
                         video: false
                     });
                 });
-            } else if(browserType === 'firefox' && window.ScreenShareExtentionExists) {
+            } else if(browserType === 'Firefox' && window.ScreenShareExtentionExists) {
                 ['Application', 'Screen', 'Window'].forEach(deviceName => {
                     MediaDevices.push({
                         deviceName: deviceName,
@@ -55,14 +57,36 @@ function override_enumerateMediaDevices() {
                         video: false
                     });
                 })
-            } else if(browserType === 'edge') {
+            } else if(browserType === 'Edge') {
                 // TODO
-            } else if(browserType === 'safari') {
+            } else if(browserType === 'Safari') {
                 // TODO
+            }
+
+            // deviceNameがC#にわたると23文字 + 1文字 = 24文字で切られ、最後の文字は化けるというバグがあり、そのバグ回避
+            var shortNames = {};
+            MediaDevices.forEach(device => {
+                var deviceName = device.deviceName || 'device #';
+                if(deviceName.length > 23) {
+                    var shortName = deviceName.substr(0, 20) + '...';
+                    shortNames[shortName] = shortNames[shortName] || [];
+                    shortNames[shortName].push(device);
+                    device.deviceName = shortName;
+                }            
+            });
+            for(var shortName in shortNames) {
+                if(shortNames[shortName].length > 1) {
+                    var lastIndex = shortNames[shortName].length - 1;
+                    var idxLength = lastIndex.toString().length;
+                    var newShortName = shortName.substr(0, 23 - idxLength - 4);
+                    shortNames[shortName].forEach((device, idx) => {
+                        device.deviceName = newShortName + '...#' + ('000' + idx).slice(-idxLength); 
+                    });
+                } 
             }
         })
         .catch(function(err){
-            console.log(err.name + ':  ' + error.message);
+            console.log(err.name + ':  ' + err.message);
         });
 }
 
