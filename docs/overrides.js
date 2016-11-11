@@ -1,10 +1,13 @@
 var consoleLog = false;
+const extensionId = 'ophefhhmblpnpplgcaeihbobllolhpnl';
+
 // UnityLoader.jsでブラウザーの判定を行っているが、Edgeは'Chrome'と判定されてしまっている。
 var browserType = window.chrome ? 'Chrome' :
               window.StyleMedia ? 'Edge' :
               window.InstallTrigger ? 'Firefox' :
               window.safari ? 'Safari' : 
               'Unsupported Browser';     
+
 function override_enumerateMediaDevices() {
     if(!navigator.mediaDevices) return;
     navigator.mediaDevices.getDisplayMedia = navigator.mediaDevices.getDisplayMedia || 
@@ -37,7 +40,7 @@ function override_enumerateMediaDevices() {
                     });
                 });
             } else if(browserType === 'Chrome') {
-                chrome.runtime.sendMessage('ophefhhmblpnpplgcaeihbobllolhpnl', 'installCheck', result => {
+                chrome.runtime.sendMessage(extensionId, 'installCheck', result => {
                     if(!result) return;
                     MediaDevices.push({
                         deviceName: 'Screen Window ChromeTab',
@@ -194,7 +197,7 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
     } else if(device.deviceName === 'Screen Window ChromeTab') {
         var getScreenStreamId = function() {
             return new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
+                chrome.runtime.sendMessage(extensionId, 'getScreenStreamId', streamId => {
                     if(streamId){
                         resolve({
                             type: 'ChromeScreenShare', 
