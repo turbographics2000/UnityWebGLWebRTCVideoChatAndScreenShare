@@ -37,7 +37,7 @@ function override_enumerateMediaDevices() {
                     });
                 });
             } else if(browserType === 'Chrome') {
-                chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
+                chrome.runtime.sendMessage('ophefhhmblpnpplgcaeihbobllolhpnl', 'installCheck', result => {
                     if(!result) return;
                     MediaDevices.push({
                         deviceName: 'Screen/Window/ChromeTab',
