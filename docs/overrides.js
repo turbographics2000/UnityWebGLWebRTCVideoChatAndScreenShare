@@ -1,5 +1,6 @@
 var consoleLog = false;
-var browser = window.chrome ? 'chrome' :
+// UnityLoader.jsでブラウザーの判定を行っているが、Edgeは'Chrome'と判定されてしまっている。
+var browserType = window.chrome ? 'chrome' :
               window.StyleMedia ? 'edge' :
               window.InstallTrigger ? 'firefox' :
               window.safari ? 'safari' : 
@@ -33,7 +34,7 @@ function override_enumerateMediaDevices() {
                         video: false
                     });
                 });
-            } else if(browser === 'chrome') {
+            } else if(browserType === 'chrome') {
                 chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
                     if(!result) return;
                     MediaDevices.push({
@@ -44,7 +45,7 @@ function override_enumerateMediaDevices() {
                         video: false
                     });
                 });
-            } else if(browser === 'firefox' && window.ScreenShareExtentionExists) {
+            } else if(browserType === 'firefox' && window.ScreenShareExtentionExists) {
                 ['Application', 'Screen', 'Window'].forEach(deviceName => {
                     MediaDevices.push({
                         deviceName: deviceName,
@@ -54,9 +55,9 @@ function override_enumerateMediaDevices() {
                         video: false
                     });
                 })
-            } else if(browser === 'edge') {
+            } else if(browserType === 'edge') {
                 // TODO
-            } else if(browser === 'safari') {
+            } else if(browserType === 'safari') {
                 // TODO
             }
         })
