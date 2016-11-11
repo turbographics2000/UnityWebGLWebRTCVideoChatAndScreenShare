@@ -1,6 +1,15 @@
-var consoleLog = false; 
+var consoleLog = false;
+var browser = window.chrome ? 'chrome' :
+              window.StyleMedia ? 'edge' :
+              window.InstallTrigger ? 'firefox' :
+              window.safari ? 'safari' : 
+              'unsupport browser';     
 function override_enumerateMediaDevices() {
     if(!navigator.mediaDevices) return;
+    navigator.mediaDevices.getDisplayMedia = navigator.mediaDevices.getDisplayMedia || 
+                                             navigator.mediaDevices.webkitGetDisplayMedia ||
+                                             navigator.mediaDevices.mozGetDisplayMedia ||
+                                             navigator.mediaDevices.msGetDisplayMedia;
     navigator.mediaDevices.enumerateDevices()
         .then(devices => {
             devices.forEach(device => {
@@ -13,15 +22,43 @@ function override_enumerateMediaDevices() {
                     });
                 }
             });
-            chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
-                if(!result) return;
-                MediaDevices.push({
-                    deviceName: 'screen',
-                    refCount: 0,
-                    deviceId: null,
-                    video: false
+            if(navigator.mediaDevices.getDisplayMedia) {
+                // TODO Screen Capture API
+                ['Application', 'Browser', 'Monitor', 'Window'].forEach(deviceName => {
+                    MediaDevices.push({
+                        deviceName: deviceName,
+                        apiType: 'ScreenCaptureAPI',
+                        refCount: 0,
+                        deviceId: null,
+                        video: false
+                    });
                 });
-            });
+            } else if(browser === 'chrome') {
+                chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'installCheck', result => {
+                    if(!result) return;
+                    MediaDevices.push({
+                        deviceName: 'Screen / Window / Chrome Tab',
+                        apiType: 'Chrome',
+                        refCount: 0,
+                        deviceId: null,
+                        video: false
+                    });
+                });
+            } else if(browser === 'firefox' && window.ScreenShareExtentionExists) {
+                ['Application', 'Screen', 'Window'].forEach(deviceName => {
+                    MediaDevices.push({
+                        deviceName: deviceName,
+                        apiType: 'Firefox',
+                        refCount: 0,
+                        deviceId: null,
+                        video: false
+                    });
+                })
+            } else if(browser === 'edge') {
+                // TODO
+            } else if(browser === 'safari') {
+                // TODO
+            }
         })
         .catch(function(err){
             console.log(err.name + ':  ' + error.message);
@@ -125,13 +162,17 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
     var video = document.createElement('video');
     var constraints = null;
     var p = null;
-    if(device.deviceName === 'screen') {
+    if(['Application', 'Browser', 'Monitor', 'Window'].includes(device.deviceName) && device.apiType === 'ScreenCaptureAPI') {
+        p = Promise.resolve({ 
+            type: 'ScreenCaptureAPI'
+        });
+    } else if(device.deviceName === 'Screen / Window / Chrome Tab') {
         var getScreenStreamId = function() {
             return new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
                     if(streamId){
                         resolve({
-                            type: 'screen', 
+                            type: 'ChromeScreenShare', 
                             streamId: streamId
                         });
                     } else {
@@ -141,13 +182,24 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
             }); 
         }
         p = getScreenStreamId();
+    } else if(['Screen', 'Window', 'Application'].includes(device.deviceName) && device.apiType === 'Firefox') {
+        p = Promise.resolve({ 
+            type: 'FirefoxScreenShare'
+        });
     } else {
         p = Promise.resolve({ 
-            type: 'webcam'
+            type: 'WebCam'
         });
     }
     p.then(captureType => {
-            if(captureType.type === 'screen') {
+            if(captureType === 'ScreenCaptureAPI') {
+                return {
+                    video: {
+                        displaySurface: device.devicename.toLowerCase()
+                        // logicalSurface: false
+                    }
+                }
+            } else if(captureType.type === 'ChromeScreenShare') {
                 return {
                     video: {
                         mandatory: {
@@ -159,6 +211,13 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
                     },
                     audio: false
                 };
+            } else if(captureType.type === 'FirefoxScreenShare') {
+                return {
+                    video: {
+                        mediaSource: device.deviceName.toLowerCase()
+                    },
+                    audio: false
+                }
             } else {
                 return {
                     video: {
@@ -169,7 +228,11 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
             }
         })
         .then(constraints => {
-            return navigator.mediaDevices.getUserMedia(constraints);
+            if(device.captureType === 'ScreenCaptureAPI') {
+                return navigator.MediaDevices.getDisplayMedia(constraints);
+            } else {
+                return navigator.mediaDevices.getUserMedia(constraints);
+            }
         })
         .then(stream => {
             video.srcObject = stream;
