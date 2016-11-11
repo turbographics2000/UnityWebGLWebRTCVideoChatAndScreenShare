@@ -40,7 +40,7 @@ function override_enumerateMediaDevices() {
                 chrome.runtime.sendMessage('ophefhhmblpnpplgcaeihbobllolhpnl', 'installCheck', result => {
                     if(!result) return;
                     MediaDevices.push({
-                        deviceName: 'Screen/Window/ChromeTab',
+                        deviceName: 'Screen Window ChromeTab',
                         apiType: 'Chrome',
                         refCount: 0,
                         deviceId: null,
@@ -191,7 +191,7 @@ function override_JS_WebCamVideo_Start(deviceIndex) {
         p = Promise.resolve({ 
             type: 'ScreenCaptureAPI'
         });
-    } else if(device.deviceName === 'Screen / Window / Chrome Tab') {
+    } else if(device.deviceName === 'Screen Window ChromeTab') {
         var getScreenStreamId = function() {
             return new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage('hnbcannpblldhckchhopjgoicginlkfj', 'getScreenStreamId', streamId => {
