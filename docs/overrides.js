@@ -1,5 +1,6 @@
 var consoleLog = false;
 const extensionId = 'ophefhhmblpnpplgcaeihbobllolhpnl';
+const remoteMaxCount = 1;
 
 // UnityLoader.jsでブラウザーの判定を行っているが、Edgeは'Chrome'と判定されてしまっている。
 var browserType = window.chrome ? 'Chrome' :
@@ -17,6 +18,12 @@ function override_enumerateMediaDevices() {
 
     navigator.mediaDevices.enumerateDevices()
         .then(devices => {
+            // リモートのストリーム選択用にダミーのデバイス追加
+            for(var i = 0; i < remoteMaxCount; i++) {
+                MediaDevices.push({
+                    deviceName: 'remote #' + i,
+                })
+            }
             devices.forEach(device => {
                 if(device.kind === 'videoinput'){
                     MediaDevices.push({
